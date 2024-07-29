@@ -5,10 +5,15 @@ import { KEY } from "../../App";
 import Stars from "../stars/Stars";
 import Loader from "../Loader";
 
-const MovieDetails = ({ selectedId, watched,onCloseMovie ,onHandleWatchMovie}) => {
+const MovieDetails = ({
+  selectedId,
+  watched,
+  onCloseMovie,
+  onHandleWatchMovie,
+}) => {
   const [movieDetails, setMovieDetails] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [rating,setRating] = useState("");
+  const [rating, setRating] = useState("");
 
   const {
     Title: title,
@@ -23,22 +28,26 @@ const MovieDetails = ({ selectedId, watched,onCloseMovie ,onHandleWatchMovie}) =
     Director: director,
   } = movieDetails;
 
-  const foundWatchedMovie = watched.find(watchMovie => watchMovie.imdbID === selectedId);
+  const foundWatchedMovie = watched.find(
+    (watchMovie) => watchMovie.imdbID === selectedId
+  );
 
+  const watchedRating = foundWatchedMovie?.userRating;
 
-
-  function handleAddToWatch(){
+  function handleAddToWatch() {
     const watchMovie = {
-        imdbID:selectedId,
-        poster,
-        title,
-        runtime : Number(runtime.split(" ")[0]),
-        imdbRating : Number(imdbRating),
-        userRating : Number(rating),
-    }
+      imdbID: selectedId,
+      poster,
+      title,
+      runtime: Number(runtime.split(" ")[0]),
+      imdbRating: Number(imdbRating),
+      userRating: Number(rating),
+    };
     onHandleWatchMovie(watchMovie);
     onCloseMovie();
   }
+
+
 
   useEffect(() => {
     async function getMovieDetails() {
@@ -48,12 +57,39 @@ const MovieDetails = ({ selectedId, watched,onCloseMovie ,onHandleWatchMovie}) =
       );
       const data = await res.json();
 
-      console.log(data);
       setMovieDetails(data);
       setIsLoading(false);
     }
     getMovieDetails();
   }, [selectedId]);
+
+
+  useEffect(()=>{
+    if(!title) return;
+    document.title = `Movie | ${title}`
+
+    return ()=>document.title = "usePopcorn";
+
+  },[title])
+
+
+  useEffect(()=>{
+
+
+    function handleKeyDown(e){
+        if(e.code === "Escape"){
+            onCloseMovie();
+        }
+    }
+
+    document.addEventListener('keydown',handleKeyDown);
+
+
+    return ()=>{
+        document.removeEventListener('keydown',handleKeyDown)
+    }
+
+  },[])
 
   return (
     <div className="details">
@@ -79,10 +115,19 @@ const MovieDetails = ({ selectedId, watched,onCloseMovie ,onHandleWatchMovie}) =
             </div>
           </header>
           <section>
-            <div className="rating"> 
-              {!foundWatchedMovie ? <Stars maxRate={10} size={24} onSetRating={setRating}/> : <p>Already added to the watch list</p>}
-
-             {rating>0 &&  <button className="btn-add" onClick={handleAddToWatch}>+ Add to Watchlist</button>}
+            <div className="rating">
+              {!foundWatchedMovie ? (
+                <>
+                  <Stars maxRate={10} size={24} onSetRating={setRating} />
+                  {rating > 0 && (
+                    <button className="btn-add" onClick={handleAddToWatch}>
+                      + Add to Watchlist
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p>Already added to the watch list with the rating of {watchedRating} <span>⭐</span></p>
+              )}
             </div>
             <p>
               <em>{plot}</em>

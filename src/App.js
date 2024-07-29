@@ -82,13 +82,21 @@ export default function App() {
     setWatched(watchMovie=>[...watchMovie,movie])
   }
 
+
+  function handleDeleteWatched(id){
+    setWatched(watched=>watched.filter(watchMovie => watchMovie.imdbID !==id))
+  }
+
   useEffect(() => {
+    const controller = new AbortController();
     async function getData() {
-      try {
+      try {  
         setIsLoading(true);
         setError("");
         const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,{
+            signal : controller.signal,
+          }
         );
         if (!res.ok)
           throw new Error("Something went wrong with fetching movies");
@@ -98,8 +106,12 @@ export default function App() {
           throw new Error("Movie Not Found");
         }
         setMovies(data.Search);
+        setError("");
       } catch (err) {
-        setError(err.message);
+        if(err.name !== "AbortError"){
+
+          setError(err.message);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -110,7 +122,15 @@ export default function App() {
       return;
     }
 
+    handleCloseMovie();
+
     getData();
+
+
+    return ()=>{
+      controller.abort();
+    }
+
   }, [query]);
 
   return (
@@ -124,7 +144,7 @@ export default function App() {
         <Box>
           {isLoading && <Loader />}
           {!isLoading && !error && (
-            <MoviesList movies={movies} onSelectMovie={handleSelectMovie} />
+            <MoviesList query={query} movies={movies} onSelectMovie={handleSelectMovie} />
           )}
           {error && <ErrorDisplay message={error} />}
         </Box>
@@ -134,7 +154,7 @@ export default function App() {
           ) : (
             <>
               <MoviesSummary watched={watched} />
-              <MoviesWatchedList watched={watched} />
+              <MoviesWatchedList watched={watched} onDeleteWatched={handleDeleteWatched}/>
             </>
           )}
         </Box>
