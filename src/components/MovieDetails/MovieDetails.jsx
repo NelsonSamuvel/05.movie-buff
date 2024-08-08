@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { KEY } from "../../App";
 
 import Stars from "../stars/Stars";
 import Loader from "../Loader";
+import { useKey } from "../../custom-hooks/useKey";
 
 const MovieDetails = ({
   selectedId,
@@ -15,9 +16,16 @@ const MovieDetails = ({
   const [isLoading, setIsLoading] = useState(false);
   const [rating, setRating] = useState("");
 
+  const countRef = useRef(0);
+
+
+  useEffect(()=>{
+    if(rating) countRef.current++;
+  },[rating])
+
+
   const {
     Title: title,
-    Year: year,
     Released: released,
     Runtime: runtime,
     Poster: poster,
@@ -34,6 +42,9 @@ const MovieDetails = ({
 
   const watchedRating = foundWatchedMovie?.userRating;
 
+
+  
+
   function handleAddToWatch() {
     const watchMovie = {
       imdbID: selectedId,
@@ -42,8 +53,10 @@ const MovieDetails = ({
       runtime: Number(runtime.split(" ")[0]),
       imdbRating: Number(imdbRating),
       userRating: Number(rating),
+      countRatingDecisions : countRef.current
     };
     onHandleWatchMovie(watchMovie);
+
     onCloseMovie();
   }
 
@@ -73,23 +86,8 @@ const MovieDetails = ({
   },[title])
 
 
-  useEffect(()=>{
+  useKey("Escape",onCloseMovie)
 
-
-    function handleKeyDown(e){
-        if(e.code === "Escape"){
-            onCloseMovie();
-        }
-    }
-
-    document.addEventListener('keydown',handleKeyDown);
-
-
-    return ()=>{
-        document.removeEventListener('keydown',handleKeyDown)
-    }
-
-  },[])
 
   return (
     <div className="details">
@@ -114,6 +112,7 @@ const MovieDetails = ({
               </p>
             </div>
           </header>
+
           <section>
             <div className="rating">
               {!foundWatchedMovie ? (
